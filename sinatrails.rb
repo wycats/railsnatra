@@ -13,6 +13,18 @@ module Sinatra
         klass.class_eval { @_routes = [] }
       end
 
+      # A helper method that provides a nice API
+      # for setting arbitrary settings
+      def set(name, value)
+        send("_set_#{name}", value)
+      end
+
+      # Nicer way of implementing the common set :foo, true
+      # idiom.
+      def enable(name)
+        set(name, true)
+      end
+
       # Returns a valid rack application for the
       # current sinatra application declaration.
       def to_app
@@ -28,6 +40,15 @@ module Sinatra
               to(controller.action(route[:action]))
           end
         end
+
+        if @_sessions
+          # If we are using sessions, then wrap the application with the
+          # session cookie store middleware.
+          app = ActionDispatch::Session::CookieStore.new(app, {:key => "_secret_key",
+            :secret => Digest::SHA2.hexdigest(Time.now.to_s + rand(100).to_s)})
+        end
+
+        app
       end
 
       def get(uri, options = {}, &block)
@@ -53,6 +74,13 @@ module Sinatra
                      :action => action_name, :options => options}
         # Now, we finally create the action method.
         define_method(action_name, &block)
+      end
+
+      # If we are setting the sessions, then include the
+      # appropriate module.
+      def _set_sessions(value)
+        @_sessions = value
+        include ActionController::Session if value
       end
     end
 
