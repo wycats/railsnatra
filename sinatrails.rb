@@ -110,6 +110,7 @@ module Sinatra
     # Loop over the template render methods and define them
     %w(haml erb builder).each do |type|
       define_method(type) do |thing|
+        return sinatra_render_inline(thing, type) if thing.is_a?(String)
         return sinatra_render_file(thing)
       end
     end
@@ -117,6 +118,10 @@ module Sinatra
     # Simple proxy to our render API
     def sinatra_render_file(name)
       render :template => name.to_s
+    end
+
+    def sinatra_render_inline(string, type)
+      render :inline => string, :type => type
     end
   end
 end
