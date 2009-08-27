@@ -6,12 +6,17 @@ require "usher"
 module Sinatra
   class Base < ActionController::Metal
     include ActionController::RackConvenience
+    include AbstractController::Callbacks
 
     class << self
       # Set @_routes on child classes
       def inherited(klass)
         klass.class_eval { @_routes = [] }
       end
+
+      # Sinatra uses the before keyword instead of
+      # before_filter, so let's alias the two.
+      alias before before_filter
 
       # A helper method that provides a nice API
       # for setting arbitrary settings
