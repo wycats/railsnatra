@@ -89,10 +89,17 @@ module Sinatra
       end
     end
 
+    # Halt can be implemented by simply throwing.
+    def halt(body = "")
+      throw(:halt, body)
+    end
+
     # The default behavior is that the action's return value
     # is the response body.
     def process_action(*)
-      self.response_body = super
+      # We are now catching the throw that could be sent
+      # when halting from a before callback.
+      self.response_body = catch(:halt) { super }
     end
   end
 end
