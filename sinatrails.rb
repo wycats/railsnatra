@@ -7,6 +7,7 @@ module Sinatra
   class Base < ActionController::Metal
     include ActionController::RackConvenience
     include AbstractController::Callbacks
+    include ActionController::RenderingController
 
     class << self
       # Set @_routes on child classes
@@ -87,6 +88,10 @@ module Sinatra
         @_sessions = value
         include ActionController::Session if value
       end
+
+      # Alias the method for settingup the views to
+      # the append view path method
+      alias _set_views append_view_path
     end
 
     # Halt can be implemented by simply throwing.
@@ -100,6 +105,18 @@ module Sinatra
       # We are now catching the throw that could be sent
       # when halting from a before callback.
       self.response_body = catch(:halt) { super }
+    end
+
+    # Loop over the template render methods and define them
+    %w(haml erb builder).each do |type|
+      define_method(type) do |thing|
+        return sinatra_render_file(thing)
+      end
+    end
+
+    # Simple proxy to our render API
+    def sinatra_render_file(name)
+      render :template => name.to_s
     end
   end
 end
